@@ -158,6 +158,19 @@ const AdminDashboard = () => {
     }
   };
 
+  const fetchContactPermissions = async () => {
+    try {
+      setLoading(true);
+      const res = await axios.get('/api/auth/contact-permissions');
+      setContactPermissions(res.data);
+    } catch (error) {
+      console.error('Error fetching contact permissions:', error);
+      alert(error.response?.data?.message || 'Error fetching contact permissions');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const fetchDeletionRequests = async () => {
     try {
       setLoading(true);
@@ -194,6 +207,19 @@ const AdminDashboard = () => {
       alert('Account deletion request rejected');
     } catch (error) {
       alert(error.response?.data?.message || 'Error rejecting deletion request');
+    }
+  };
+
+  const handleChangeRole = async (userId, newRole) => {
+    if (!window.confirm(`Are you sure you want to change this user's role to ${newRole}?`)) {
+      return;
+    }
+    try {
+      await axios.put(`/api/auth/users/${userId}/role`, { role: newRole });
+      await fetchUsers();
+      alert('User role updated successfully');
+    } catch (error) {
+      alert(error.response?.data?.message || 'Error updating user role');
     }
   };
 
@@ -372,6 +398,7 @@ const AdminDashboard = () => {
                         <th className="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
                         <th className="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
                         <th className="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Joined</th>
+                        <th className="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
@@ -389,6 +416,27 @@ const AdminDashboard = () => {
                           </td>
                           <td className="px-4 md:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                             {new Date(u.createdAt).toLocaleDateString('en-IN')}
+                          </td>
+                          <td className="px-4 md:px-6 py-4 whitespace-nowrap text-sm">
+                            <div className="flex gap-2">
+                              {u.role === 'admin' ? (
+                                <button
+                                  onClick={() => handleChangeRole(u._id, 'user')}
+                                  className="px-3 py-1 bg-gray-600 text-white text-xs rounded hover:bg-gray-700 transition"
+                                  title="Change to User"
+                                >
+                                  Make User
+                                </button>
+                              ) : (
+                                <button
+                                  onClick={() => handleChangeRole(u._id, 'admin')}
+                                  className="px-3 py-1 bg-indigo-600 text-white text-xs rounded hover:bg-indigo-700 transition"
+                                  title="Change to Admin"
+                                >
+                                  Make Admin
+                                </button>
+                              )}
+                            </div>
                           </td>
                         </tr>
                       ))}

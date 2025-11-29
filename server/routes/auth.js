@@ -108,6 +108,32 @@ router.get('/users', auth, async (req, res) => {
   }
 });
 
+// Update user role (Admin only)
+router.put('/users/:id/role', auth, async (req, res) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Access denied. Admin only.' });
+    }
+    const { role } = req.body;
+    if (!role || !['admin', 'user'].includes(role)) {
+      return res.status(400).json({ message: 'Invalid role. Must be "admin" or "user"' });
+    }
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    // Prevent admin from changing their own role
+    if (user._id.toString() === req.user._id.toString()) {
+      return res.status(400).json({ message: 'You cannot change your own role' });
+    }
+    user.role = role;
+    await user.save();
+    res.json({ message: 'User role updated successfully', user });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 // Get contact permissions for all users (Admin only)
 router.get('/contact-permissions', auth, async (req, res) => {
   try {
