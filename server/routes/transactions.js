@@ -263,7 +263,12 @@ router.post('/share/history', auth, async (req, res) => {
 
     await sharedLink.save();
 
-    const shareUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/shared/${token}`;
+    // Build share URL using request origin (works for both dev and production)
+    // In production, both server and client are on same domain
+    const protocol = req.protocol || (req.headers['x-forwarded-proto'] || 'http');
+    const host = req.get('host') || req.headers.host || 'localhost:5000';
+    const baseUrl = process.env.FRONTEND_URL || `${protocol}://${host}`;
+    const shareUrl = `${baseUrl}/shared/${token}`;
 
     res.json({
       message: 'Shareable link created successfully',
