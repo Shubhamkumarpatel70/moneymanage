@@ -4,7 +4,9 @@ import axios from 'axios';
 import { FiArrowLeft, FiShare2, FiCreditCard } from 'react-icons/fi';
 
 const SharedTransactions = () => {
-  const { token } = useParams();
+  const { token: rawToken } = useParams();
+  // Decode the token to handle URL encoding (e.g., %20 for spaces)
+  const token = decodeURIComponent(rawToken || '');
   const navigate = useNavigate();
   const [phoneNumber, setPhoneNumber] = useState('');
   const [transactions, setTransactions] = useState([]);

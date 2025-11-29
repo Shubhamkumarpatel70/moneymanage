@@ -435,7 +435,7 @@ router.post('/shared/:token/payment', async (req, res) => {
     const Payment = require('../models/Payment');
     const payment = new Payment({
       userId: sharedLink.userId,
-      sharedLinkToken: req.params.token,
+      sharedLinkToken: token,
       payerPhoneNumber: phoneNumber,
       amount: amount,
       paymentMethodId: paymentMethod._id,
