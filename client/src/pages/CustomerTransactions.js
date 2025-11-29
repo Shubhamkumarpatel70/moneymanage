@@ -127,27 +127,31 @@ const CustomerTransactions = () => {
       
       const shareUrl = res.data.shareUrl;
       
-      // Copy to clipboard
+      // Prepare share text with customer details
+      const customerInfo = customer ? `Customer: ${customer.name}\nPhone: ${customer.mobile}\n\n` : '';
+      const shareText = `${customerInfo}Transaction History Link:\n${shareUrl}\n\nPlease enter your phone number: ${shareMobile} to view the transactions.`;
+      
+      // Copy to clipboard with customer details
       if (navigator.clipboard) {
-        await navigator.clipboard.writeText(shareUrl);
-        alert(`Shareable link copied to clipboard!\n\nLink: ${shareUrl}\n\nShare this link with the phone number: ${shareMobile}`);
+        await navigator.clipboard.writeText(shareText);
+        alert(`Shareable link with customer details copied to clipboard!\n\n${shareText}`);
       } else {
         // Fallback for older browsers
         const textArea = document.createElement('textarea');
-        textArea.value = shareUrl;
+        textArea.value = shareText;
         document.body.appendChild(textArea);
         textArea.select();
         document.execCommand('copy');
         document.body.removeChild(textArea);
-        alert(`Shareable link copied!\n\nLink: ${shareUrl}\n\nShare this link with the phone number: ${shareMobile}`);
+        alert(`Shareable link with customer details copied!\n\n${shareText}`);
       }
       
       // Try native share if available
       if (navigator.share) {
         try {
           await navigator.share({
-            title: 'Transaction History',
-            text: `View my transaction history. Enter phone number: ${shareMobile}`,
+            title: customer ? `Transaction History - ${customer.name}` : 'Transaction History',
+            text: shareText,
             url: shareUrl
           });
         } catch (shareError) {
