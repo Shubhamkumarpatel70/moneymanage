@@ -24,9 +24,9 @@ const userSchema = new mongoose.Schema({
   },
   mpin: {
     type: String,
-    required: true,
-    minlength: 4,
-    maxlength: 4
+    required: true
+    // Note: minlength/maxlength removed because MPIN is hashed before saving (becomes 60 chars)
+    // Validation for 4-digit MPIN is done in routes before hashing
   },
   role: {
     type: String,

@@ -11,6 +11,11 @@ router.post('/register', async (req, res) => {
   try {
     const { name, phone, password, mpin, email } = req.body;
 
+    // Validate MPIN is exactly 4 digits
+    if (!mpin || mpin.length !== 4 || !/^\d{4}$/.test(mpin)) {
+      return res.status(400).json({ message: 'MPIN must be exactly 4 digits' });
+    }
+
     // Check if user already exists
     const existingUser = await User.findOne({ phone });
     if (existingUser) {
@@ -295,7 +300,13 @@ router.put('/update', auth, async (req, res) => {
     }
     if (email) user.email = email;
     if (password) user.password = password; // Will be hashed by pre-save hook
-    if (mpin) user.mpin = mpin; // Will be hashed by pre-save hook
+    if (mpin) {
+      // Validate MPIN is exactly 4 digits
+      if (mpin.length !== 4 || !/^\d{4}$/.test(mpin)) {
+        return res.status(400).json({ message: 'MPIN must be exactly 4 digits' });
+      }
+      user.mpin = mpin; // Will be hashed by pre-save hook
+    }
 
     await user.save();
 
