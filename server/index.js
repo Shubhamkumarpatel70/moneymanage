@@ -26,20 +26,21 @@ app.use('/api/transactions', require('./routes/transactions'));
 app.use('/api/payment-methods', require('./routes/paymentMethods'));
 app.use('/api/payments', require('./routes/payments'));
 
-// Serve static files from React app in production
+// Serve static files from React app (both development and production)
 // This must be after API routes but before catch-all
-if (process.env.NODE_ENV === 'production') {
-  const path = require('path');
-  const fs = require('fs');
-  const buildPath = path.join(__dirname, '../client/build');
-  
+const path = require('path');
+const fs = require('fs');
+const buildPath = path.join(__dirname, '../client/build');
+
+// Check if build directory exists
+if (fs.existsSync(buildPath)) {
   // Log build path for debugging
   console.log('Build path:', buildPath);
-  console.log('Build directory exists:', fs.existsSync(buildPath));
+  console.log('Serving React app from build directory');
   
   // Serve static files from /static directory (JS, CSS, etc.)
   app.use('/static', express.static(path.join(buildPath, 'static'), {
-    maxAge: '1y',
+    maxAge: process.env.NODE_ENV === 'production' ? '1y' : '0',
     etag: false
   }));
   
@@ -55,7 +56,7 @@ if (process.env.NODE_ENV === 'production') {
   
   // Serve favicon and other public assets
   app.use(express.static(buildPath, {
-    maxAge: '1y',
+    maxAge: process.env.NODE_ENV === 'production' ? '1y' : '0',
     etag: false,
     index: false
   }));
@@ -85,6 +86,9 @@ if (process.env.NODE_ENV === 'production') {
       }
     });
   });
+} else {
+  console.log('Build directory not found. Make sure to run "npm run build" in the client directory.');
+  console.log('Expected build path:', buildPath);
 }
 
 const PORT = process.env.PORT || 5000;
