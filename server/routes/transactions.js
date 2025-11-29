@@ -46,8 +46,11 @@ router.post('/', auth, async (req, res) => {
       return res.status(404).json({ message: 'Customer not found' });
     }
 
-    // Get last transaction to calculate balance
-    const lastTransaction = await Transaction.findOne({ userId: req.user._id })
+    // Get last transaction for THIS CUSTOMER to calculate balance per customer
+    const lastTransaction = await Transaction.findOne({ 
+      userId: req.user._id,
+      customerId: customerId
+    })
       .sort({ createdAt: -1 });
 
     let balance = lastTransaction ? lastTransaction.balance : 0;
@@ -169,8 +172,11 @@ router.put('/:id', auth, async (req, res) => {
       transaction.updatedAt = new Date();
     }
 
-    // Recalculate balance for all transactions from the beginning
-    const allTransactions = await Transaction.find({ userId: req.user._id })
+    // Recalculate balance for all transactions of THIS CUSTOMER from the beginning
+    const allTransactions = await Transaction.find({ 
+      userId: req.user._id,
+      customerId: transaction.customerId
+    })
       .sort({ createdAt: 1 });
     
     let currentBalance = 0;
@@ -184,7 +190,7 @@ router.put('/:id', auth, async (req, res) => {
         }
         transaction.balance = currentBalance;
       } else {
-        // Recalculate balance for all transactions
+        // Recalculate balance for all transactions of this customer
         if (t.type === 'received') {
           currentBalance += t.amount;
         } else {
@@ -218,10 +224,14 @@ router.delete('/:id', auth, async (req, res) => {
       return res.status(404).json({ message: 'Transaction not found' });
     }
 
+    const customerId = transaction.customerId;
     await Transaction.findByIdAndDelete(req.params.id);
 
-    // Recalculate balances for remaining transactions
-    const allTransactions = await Transaction.find({ userId: req.user._id })
+    // Recalculate balances for remaining transactions of THIS CUSTOMER
+    const allTransactions = await Transaction.find({ 
+      userId: req.user._id,
+      customerId: customerId
+    })
       .sort({ createdAt: 1 });
     
     let currentBalance = 0;

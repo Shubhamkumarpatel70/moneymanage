@@ -25,6 +25,8 @@ const CustomerTransactions = () => {
     time: ''
   });
   const [balance, setBalance] = useState(0);
+  const [totalReceived, setTotalReceived] = useState(0);
+  const [totalGiven, setTotalGiven] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -45,15 +47,23 @@ const CustomerTransactions = () => {
     try {
       const res = await axios.get(`/api/transactions/customer/${customerId}`);
       setTransactions(res.data);
-      // Calculate current balance from the most recent transaction
-      // The balance field in the last transaction (first in array) is the current balance for this customer
-      if (res.data.length > 0) {
-        // Get the most recent transaction's balance (first item in sorted array)
-        setBalance(res.data[0].balance);
-      } else {
-        // If no transactions, balance is 0
-        setBalance(0);
-      }
+      
+      // Calculate totals and balance for this customer
+      let received = 0;
+      let given = 0;
+      
+      res.data.forEach(transaction => {
+        if (transaction.type === 'received') {
+          received += transaction.amount;
+        } else if (transaction.type === 'given') {
+          given += transaction.amount;
+        }
+      });
+      
+      setTotalReceived(received);
+      setTotalGiven(given);
+      // Current Balance = Total Received - Total Given
+      setBalance(received - given);
     } catch (error) {
       console.error('Error fetching transactions:', error);
     } finally {
@@ -304,12 +314,31 @@ const CustomerTransactions = () => {
       </div>
 
       <div className="max-w-2xl mx-auto px-3 md:px-4 py-4 md:py-6">
-        {/* Balance Card */}
-        <div className="bg-white rounded-lg shadow p-4 md:p-6 mb-4 md:mb-6">
-          <p className="text-xs md:text-sm text-gray-600 mb-1">Current Balance</p>
-          <p className={`text-2xl md:text-3xl font-bold ${balance >= 0 ? 'text-indigo-600' : 'text-red-600'}`}>
-            {formatCurrency(balance)}
-          </p>
+        {/* Summary Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4 mb-4 md:mb-6">
+          {/* Total Received Card */}
+          <div className="bg-white rounded-lg shadow p-4 md:p-6 border-l-4 border-green-500">
+            <p className="text-xs md:text-sm text-gray-600 mb-1">Total Received</p>
+            <p className="text-xl md:text-2xl font-bold text-green-600">
+              {formatCurrency(totalReceived)}
+            </p>
+          </div>
+          
+          {/* Total Given Card */}
+          <div className="bg-white rounded-lg shadow p-4 md:p-6 border-l-4 border-red-500">
+            <p className="text-xs md:text-sm text-gray-600 mb-1">Total Given</p>
+            <p className="text-xl md:text-2xl font-bold text-red-600">
+              {formatCurrency(totalGiven)}
+            </p>
+          </div>
+          
+          {/* Current Balance Card */}
+          <div className="bg-white rounded-lg shadow p-4 md:p-6 border-l-4 border-indigo-500">
+            <p className="text-xs md:text-sm text-gray-600 mb-1">Current Balance</p>
+            <p className={`text-xl md:text-2xl font-bold ${balance >= 0 ? 'text-indigo-600' : 'text-red-600'}`}>
+              {formatCurrency(balance)}
+            </p>
+          </div>
         </div>
 
         {/* Add Transaction Buttons */}

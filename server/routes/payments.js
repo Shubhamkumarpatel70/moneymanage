@@ -133,8 +133,11 @@ router.post('/:id/approve', auth, async (req, res) => {
       }
 
       if (customer) {
-        // Get the last transaction to calculate balance
-        const lastTransaction = await Transaction.findOne({ userId: payment.userId })
+        // Get the last transaction for THIS CUSTOMER to calculate balance per customer
+        const lastTransaction = await Transaction.findOne({ 
+          userId: payment.userId,
+          customerId: customer._id
+        })
           .sort({ createdAt: -1 });
         
         const currentBalance = lastTransaction ? lastTransaction.balance : 0;
