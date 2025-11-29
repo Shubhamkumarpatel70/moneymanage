@@ -915,6 +915,61 @@ const AdminDashboard = () => {
           </div>
         </div>
       )}
+
+      {/* Contacts View Modal */}
+      {viewingContacts && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4"
+          onClick={() => setViewingContacts(null)}
+        >
+          <div 
+            className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="px-6 py-4 border-b flex justify-between items-center">
+              <h3 className="text-lg font-semibold text-gray-800">
+                Contacts - {viewingContacts.userId?.name || 'User'}
+              </h3>
+              <button
+                onClick={() => setViewingContacts(null)}
+                className="p-2 hover:bg-gray-100 rounded-lg transition"
+              >
+                <FiX className="text-xl text-gray-700" />
+              </button>
+            </div>
+            <div className="p-6 overflow-y-auto flex-1">
+              {viewingContacts.contacts && viewingContacts.contacts.length > 0 ? (
+                <div className="space-y-3">
+                  {viewingContacts.contacts.map((contact, index) => (
+                    <div key={index} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition">
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <p className="font-medium text-gray-900">{contact.name || 'No Name'}</p>
+                          <p className="text-sm text-gray-500 mt-1">{contact.phone || 'No Phone'}</p>
+                          <p className="text-xs text-gray-400 mt-2">
+                            Accessed: {new Date(contact.accessedAt).toLocaleString('en-IN', {
+                              day: 'numeric',
+                              month: 'short',
+                              year: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center text-gray-500 py-8">
+                  <FiPhone className="mx-auto text-4xl text-gray-400 mb-2" />
+                  <p>No contacts accessed yet</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
