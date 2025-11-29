@@ -32,15 +32,36 @@ if (process.env.NODE_ENV === 'production') {
   const path = require('path');
   const buildPath = path.join(__dirname, '../client/build');
   
-  // Serve static files (JS, CSS, images, etc.)
+  // Serve static files (JS, CSS, images, manifest.json, etc.)
+  // Use fallthrough: false to prevent falling through to catch-all if file not found
   app.use(express.static(buildPath, {
     maxAge: '1y', // Cache static assets
-    etag: false
+    etag: false,
+    fallthrough: false // Don't fall through to next middleware if file not found
   }));
   
   // Serve React app for all non-API routes (catch-all handler)
-  app.get('*', (req, res) => {
-    res.sendFile(path.join(buildPath, 'index.html'));
+  // Only serve index.html for routes that don't start with /api/ and aren't static files
+  app.get('*', (req, res, next) => {
+    // Skip API routes
+    if (req.path.startsWith('/api/')) {
+      return res.status(404).json({ message: 'API route not found' });
+    }
+    
+    // Skip static file requests (they should be handled by express.static above)
+    const staticFileExtensions = ['.js', '.css', '.json', '.png', '.jpg', '.jpeg', '.gif', '.svg', '.ico', '.woff', '.woff2', '.ttf', '.eot'];
+    const hasStaticExtension = staticFileExtensions.some(ext => req.path.toLowerCase().endsWith(ext));
+    
+    if (hasStaticExtension) {
+      return res.status(404).send('File not found');
+    }
+    
+    // For all other routes, serve index.html
+    res.sendFile(path.join(buildPath, 'index.html'), (err) => {
+      if (err) {
+        res.status(500).send('Error loading page');
+      }
+    });
   });
 }
 
