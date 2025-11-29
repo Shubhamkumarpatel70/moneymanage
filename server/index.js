@@ -69,12 +69,32 @@ if (fs.existsSync(buildPath)) {
       return res.status(404).json({ message: 'API route not found' });
     }
     
+    // Check if the requested path is a file that exists in the build directory
+    const requestedFile = path.join(buildPath, req.path);
+    const fileExists = fs.existsSync(requestedFile) && fs.statSync(requestedFile).isFile();
+    
+    // If it's a file that exists, try to serve it (this handles files without extensions)
+    if (fileExists) {
+      return res.sendFile(requestedFile, (err) => {
+        if (err) {
+          console.error('Error serving file:', req.path, err);
+          // Fall through to serve index.html
+        }
+      });
+    }
+    
     // Skip static file requests - these should be handled by express.static above
-    const staticFileExtensions = ['.js', '.css', '.json', '.png', '.jpg', '.jpeg', '.gif', '.svg', '.ico', '.woff', '.woff2', '.ttf', '.eot', '.map'];
+    // Check for known static file extensions
+    const staticFileExtensions = ['.js', '.css', '.json', '.png', '.jpg', '.jpeg', '.gif', '.svg', '.ico', '.woff', '.woff2', '.ttf', '.eot', '.map', '.webmanifest'];
     const hasStaticExtension = staticFileExtensions.some(ext => req.path.toLowerCase().endsWith(ext));
     
-    if (hasStaticExtension) {
-      // If it's a static file extension but wasn't found, return 404
+    // Also check if it looks like a hash-based filename (service worker, chunk, etc.)
+    // Hash filenames are typically 40-64 character hex strings
+    const pathParts = req.path.split('/').pop();
+    const isHashFile = /^[a-f0-9]{32,64}$/i.test(pathParts);
+    
+    if (hasStaticExtension || isHashFile) {
+      // If it's a static file but wasn't found, return 404
       return res.status(404).send('File not found');
     }
     
