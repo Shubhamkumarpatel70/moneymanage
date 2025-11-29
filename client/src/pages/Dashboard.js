@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
-import { FiPlus, FiLogOut, FiUser, FiSettings, FiHome, FiCreditCard, FiUser as FiUserIcon, FiUsers, FiTrash2, FiEdit2, FiX, FiImage, FiDollarSign, FiGlobe, FiEye, FiCheck, FiXCircle } from 'react-icons/fi';
+import { FiPlus, FiLogOut, FiUser, FiSettings, FiHome, FiCreditCard, FiUser as FiUserIcon, FiUsers, FiTrash2, FiEdit2, FiX, FiImage, FiDollarSign, FiGlobe, FiEye, FiCheck, FiXCircle, FiSearch, FiPhone } from 'react-icons/fi';
 
 const Dashboard = () => {
   const { t } = useLanguage();
@@ -17,6 +17,7 @@ const Dashboard = () => {
   const [showAddCustomer, setShowAddCustomer] = useState(false);
   const [newCustomer, setNewCustomer] = useState({ name: '', mobile: '' });
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
   const { user, logout } = useContext(AuthContext);
   const navigate = useNavigate();
 
@@ -45,6 +46,50 @@ const Dashboard = () => {
     }
   };
 
+  const handlePickContact = async () => {
+    try {
+      // First, always ask for permission to use contacts
+      const permissionGranted = window.confirm(
+        'This app would like to access your contacts to help you add customers quickly. Do you want to continue?'
+      );
+
+      if (!permissionGranted) {
+        alert('Okay. You can still enter customer details manually.');
+        return;
+      }
+
+      // Check if Contact Picker API is available (Chrome/Edge on Android)
+      if ('contacts' in navigator && 'select' in navigator.contacts) {
+        try {
+          // Use Contact Picker API to select contact
+          const selectedContacts = await navigator.contacts.select(['name', 'tel'], { multiple: false });
+          if (selectedContacts && selectedContacts.length > 0) {
+            const contact = selectedContacts[0];
+            const name = contact.name?.[0] || '';
+            const phone = contact.tel?.[0] || '';
+            setNewCustomer({ 
+              name: name, 
+              mobile: phone.replace(/\D/g, '') // Remove non-digits
+            });
+          }
+        } catch (err) {
+          if (err.name === 'AbortError') {
+            // User cancelled the contact picker
+            return;
+          }
+          console.error('Error accessing contacts:', err);
+          alert('Failed to access contacts. Please enter manually.');
+        }
+      } else {
+        // Fallback for browsers that don't support Contact Picker API
+        alert('Contact picker is not supported in this browser. Please enter customer details manually.');
+      }
+    } catch (error) {
+      console.error('Error picking contact:', error);
+      alert('Failed to access contacts. Please enter manually.');
+    }
+  };
+
   const handleAddCustomer = async (e) => {
     e.preventDefault();
     try {
@@ -56,6 +101,15 @@ const Dashboard = () => {
       alert(error.response?.data?.message || 'Error adding customer');
     }
   };
+
+  // Filter customers based on search query
+  const filteredCustomers = customers.filter(customer => {
+    const query = searchQuery.toLowerCase();
+    return (
+      customer.name.toLowerCase().includes(query) ||
+      customer.mobile.includes(query)
+    );
+  });
 
   const handleLogout = () => {
     logout();
@@ -206,14 +260,26 @@ const Dashboard = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Mobile Number
                 </label>
-                <input
-                  type="tel"
-                  value={newCustomer.mobile}
-                  onChange={(e) => setNewCustomer({ ...newCustomer, mobile: e.target.value })}
-                  required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
-                  placeholder="Enter mobile number"
-                />
+                <div className="flex gap-2">
+                  <input
+                    type="tel"
+                    value={newCustomer.mobile}
+                    onChange={(e) => setNewCustomer({ ...newCustomer, mobile: e.target.value.replace(/\D/g, '') })}
+                    required
+                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
+                    placeholder="Enter mobile number"
+                  />
+                  <button
+                    type="button"
+                    onClick={handlePickContact}
+                    className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition flex items-center gap-2"
+                    title="Pick from contacts"
+                  >
+                    <FiPhone className="text-lg" />
+                    <span className="hidden sm:inline">Contacts</span>
+                  </button>
+                </div>
+                <p className="text-xs text-gray-500 mt-1">Click Contacts button to import from your phone</p>
               </div>
               <button
                 type="submit"
@@ -228,7 +294,34 @@ const Dashboard = () => {
         {/* Customers List */}
         <div className="bg-white rounded-lg shadow">
           <div className="px-4 md:px-6 py-3 md:py-4 border-b">
-            <h2 className="text-base md:text-lg font-semibold text-gray-800">Customers</h2>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-base md:text-lg font-semibold text-gray-800">Customers</h2>
+              {customers.length > 0 && (
+                <span className="text-xs text-gray-500">
+                  {filteredCustomers.length} of {customers.length}
+                </span>
+              )}
+            </div>
+            {customers.length > 0 && (
+              <div className="relative">
+                <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search customers by name or phone..."
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none text-sm"
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    <FiX className="text-lg" />
+                  </button>
+                )}
+              </div>
+            )}
           </div>
           {loading ? (
             <div className="p-8 text-center text-gray-500">Loading...</div>
@@ -236,9 +329,13 @@ const Dashboard = () => {
             <div className="p-8 text-center text-gray-500">
               No customers yet. Add your first customer above.
             </div>
+          ) : filteredCustomers.length === 0 ? (
+            <div className="p-8 text-center text-gray-500">
+              No customers found matching "{searchQuery}"
+            </div>
           ) : (
             <div className="divide-y">
-              {customers.map((customer) => (
+              {filteredCustomers.map((customer) => (
                 <div
                   key={customer._id}
                   onClick={() => navigate(`/customer/${customer._id}`)}
