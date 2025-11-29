@@ -181,25 +181,40 @@ const CustomerTransactions = () => {
         mobileNumber: shareMobile
       });
       
-      const shareText = `Transaction Details from ${res.data.user.name}\n\n` +
+      // Include customer details in the share text
+      const customerInfo = customer ? `Customer: ${customer.name}\nPhone: ${customer.mobile}\n\n` : '';
+      const shareText = `${customerInfo}Transaction Details from ${res.data.user.name}\n\n` +
         `Date: ${formatDate(selectedTransaction.createdAt)}\n` +
         `Type: ${selectedTransaction.type === 'given' ? 'Given' : 'Received'}\n` +
         `Amount: ₹${selectedTransaction.amount}\n` +
         `Balance: ₹${selectedTransaction.balance}\n` +
         (selectedTransaction.description ? `Description: ${selectedTransaction.description}` : '');
       
+      // Copy to clipboard
+      if (navigator.clipboard) {
+        await navigator.clipboard.writeText(shareText);
+      } else {
+        // Fallback for older browsers
+        const textArea = document.createElement('textarea');
+        textArea.value = shareText;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+      }
+      
       if (navigator.share) {
         try {
           await navigator.share({
-            title: 'Transaction Entry',
+            title: customer ? `Transaction Entry - ${customer.name}` : 'Transaction Entry',
             text: shareText
           });
         } catch (shareError) {
-          // User cancelled or error occurred
+          // User cancelled or error occurred, but text is already copied
         }
       }
       
-      alert(`Transaction entry shared with ${shareMobile} successfully!`);
+      alert(`Transaction entry with customer details shared with ${shareMobile} successfully!`);
       setShowShareModal(false);
       setShareMobile('');
       setSelectedTransaction(null);
