@@ -33,11 +33,11 @@ if (process.env.NODE_ENV === 'production') {
   const buildPath = path.join(__dirname, '../client/build');
   
   // Serve static files (JS, CSS, images, manifest.json, etc.)
-  // Use fallthrough: false to prevent falling through to catch-all if file not found
+  // This middleware will serve files from the build directory
   app.use(express.static(buildPath, {
     maxAge: '1y', // Cache static assets
     etag: false,
-    fallthrough: false // Don't fall through to next middleware if file not found
+    index: false // Don't serve index.html for directory requests
   }));
   
   // Serve React app for all non-API routes (catch-all handler)
@@ -48,17 +48,21 @@ if (process.env.NODE_ENV === 'production') {
       return res.status(404).json({ message: 'API route not found' });
     }
     
-    // Skip static file requests (they should be handled by express.static above)
-    const staticFileExtensions = ['.js', '.css', '.json', '.png', '.jpg', '.jpeg', '.gif', '.svg', '.ico', '.woff', '.woff2', '.ttf', '.eot'];
+    // Skip static file requests - these should be handled by express.static above
+    // If express.static didn't find the file, it will call next() and we'll serve index.html
+    // But we want to explicitly skip known static file extensions to avoid serving HTML for missing files
+    const staticFileExtensions = ['.js', '.css', '.json', '.png', '.jpg', '.jpeg', '.gif', '.svg', '.ico', '.woff', '.woff2', '.ttf', '.eot', '.map'];
     const hasStaticExtension = staticFileExtensions.some(ext => req.path.toLowerCase().endsWith(ext));
     
     if (hasStaticExtension) {
+      // If it's a static file extension but wasn't found by express.static, return 404
       return res.status(404).send('File not found');
     }
     
-    // For all other routes, serve index.html
+    // For all other routes (SPA routes), serve index.html
     res.sendFile(path.join(buildPath, 'index.html'), (err) => {
       if (err) {
+        console.error('Error sending index.html:', err);
         res.status(500).send('Error loading page');
       }
     });
