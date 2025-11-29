@@ -45,7 +45,7 @@ if (fs.existsSync(buildPath)) {
     etag: false
   }));
   
-  // Serve manifest.json from root and from any nested route
+  // Serve manifest.json from root
   app.get('/manifest.json', (req, res) => {
     res.sendFile(path.join(buildPath, 'manifest.json'), (err) => {
       if (err) {
@@ -55,10 +55,19 @@ if (fs.existsSync(buildPath)) {
     });
   });
   
-  // Also serve manifest.json from nested routes (like /shared/:token/manifest.json)
-  // This handles cases where the browser requests it with a relative path
+  // Handle static files requested from nested routes (like /shared/:token/static/...)
+  // Redirect them to the correct absolute path
+  app.get('*/static/*', (req, res) => {
+    const staticPath = req.path.substring(req.path.indexOf('/static/'));
+    const staticFile = path.join(buildPath, staticPath);
+    if (fs.existsSync(staticFile) && fs.statSync(staticFile).isFile()) {
+      return res.sendFile(staticFile);
+    }
+    res.status(404).send('Static file not found');
+  });
+  
+  // Handle manifest.json from nested routes
   app.get('*/manifest.json', (req, res) => {
-    // Extract the actual path and serve from root
     const manifestPath = path.join(buildPath, 'manifest.json');
     res.sendFile(manifestPath, (err) => {
       if (err) {
