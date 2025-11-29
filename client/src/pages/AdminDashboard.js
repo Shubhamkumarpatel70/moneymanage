@@ -2,7 +2,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
-import { FiLogOut, FiUsers, FiDollarSign, FiX, FiCreditCard, FiEdit2, FiTrash2, FiUserX, FiCheck, FiXCircle, FiEye } from 'react-icons/fi';
+import { FiLogOut, FiUsers, FiDollarSign, FiX, FiCreditCard, FiEdit2, FiTrash2, FiUserX, FiCheck, FiXCircle, FiEye, FiPhone } from 'react-icons/fi';
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('users');
@@ -11,6 +11,8 @@ const AdminDashboard = () => {
   const [payments, setPayments] = useState([]);
   const [paymentMethods, setPaymentMethods] = useState([]);
   const [deletionRequests, setDeletionRequests] = useState([]);
+  const [contactPermissions, setContactPermissions] = useState([]);
+  const [viewingContacts, setViewingContacts] = useState(null);
   const [editingPaymentMethod, setEditingPaymentMethod] = useState(null);
   const [editPaymentMethodForm, setEditPaymentMethodForm] = useState({
     upiId: '',
@@ -40,6 +42,8 @@ const AdminDashboard = () => {
       fetchAllPaymentMethods();
     } else if (activeTab === 'deletion-requests') {
       fetchDeletionRequests();
+    } else if (activeTab === 'contact-permissions') {
+      fetchContactPermissions();
     }
   }, [activeTab, user]);
 
@@ -316,6 +320,19 @@ const AdminDashboard = () => {
               <div className="flex items-center justify-center gap-2">
                 <FiCreditCard />
                 <span>Payment Methods</span>
+              </div>
+            </button>
+            <button
+              onClick={() => setActiveTab('contact-permissions')}
+              className={`flex-1 min-w-[150px] py-4 px-6 text-center font-medium transition ${
+                activeTab === 'contact-permissions'
+                  ? 'border-b-2 border-indigo-600 text-indigo-600'
+                  : 'text-gray-600 hover:text-gray-800'
+              }`}
+            >
+              <div className="flex items-center justify-center gap-2">
+                <FiPhone />
+                <span>Contact Permissions</span>
               </div>
             </button>
             <button
@@ -712,6 +729,79 @@ const AdminDashboard = () => {
                                 <FiTrash2 className="text-sm" />
                               </button>
                             </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          ) : activeTab === 'contact-permissions' ? (
+            <div>
+              <div className="px-4 md:px-6 py-4 border-b">
+                <h2 className="text-lg font-semibold text-gray-800">Contact Permissions</h2>
+              </div>
+              {contactPermissions.length === 0 ? (
+                <div className="p-8 text-center text-gray-500">No contact permissions found</div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User Name</th>
+                        <th className="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                        <th className="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact Permission</th>
+                        <th className="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contacts Count</th>
+                        <th className="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Accessed</th>
+                        <th className="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {contactPermissions.map((permission) => (
+                        <tr key={permission._id} className="hover:bg-gray-50">
+                          <td className="px-4 md:px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                            {permission.userId?.name || 'N/A'}
+                          </td>
+                          <td className="px-4 md:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {permission.userId?.email || '-'}
+                          </td>
+                          <td className="px-4 md:px-6 py-4 whitespace-nowrap">
+                            <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                              permission.permissionGranted 
+                                ? 'bg-green-100 text-green-800' 
+                                : 'bg-red-100 text-red-800'
+                            }`}>
+                              {permission.permissionGranted ? 'Yes' : 'No'}
+                            </span>
+                          </td>
+                          <td className="px-4 md:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {permission.contacts?.length || 0}
+                          </td>
+                          <td className="px-4 md:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {permission.lastAccessed 
+                              ? new Date(permission.lastAccessed).toLocaleString('en-IN', {
+                                  day: 'numeric',
+                                  month: 'short',
+                                  year: 'numeric',
+                                  hour: '2-digit',
+                                  minute: '2-digit'
+                                })
+                              : '-'}
+                          </td>
+                          <td className="px-4 md:px-6 py-4 whitespace-nowrap text-sm">
+                            {permission.permissionGranted && permission.contacts?.length > 0 ? (
+                              <button
+                                onClick={() => setViewingContacts(permission)}
+                                className="p-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 transition flex items-center gap-1"
+                                title="View Contacts"
+                              >
+                                <FiEye className="text-sm" />
+                                <span className="hidden sm:inline text-xs">View</span>
+                              </button>
+                            ) : (
+                              <span className="text-gray-400 text-xs">No contacts</span>
+                            )}
                           </td>
                         </tr>
                       ))}

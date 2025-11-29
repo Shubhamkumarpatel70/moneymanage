@@ -69,6 +69,16 @@ const Dashboard = () => {
           // User granted permission - store this so we don't ask again
           localStorage.setItem('contactPermissionGranted', 'true');
           setContactPermissionGranted(true);
+          
+          // Save permission grant to backend
+          try {
+            await axios.post('/api/auth/contact-permission', {
+              permissionGranted: true
+            });
+          } catch (err) {
+            console.error('Error saving contact permission:', err);
+            // Don't block the user if saving fails
+          }
         }
       }
 
@@ -81,10 +91,26 @@ const Dashboard = () => {
             const contact = selectedContacts[0];
             const name = contact.name?.[0] || '';
             const phone = contact.tel?.[0] || '';
+            const cleanedPhone = phone.replace(/\D/g, ''); // Remove non-digits
+            
             setNewCustomer({ 
               name: name, 
-              mobile: phone.replace(/\D/g, '') // Remove non-digits
+              mobile: cleanedPhone
             });
+            
+            // Save contact permission and contact to backend
+            try {
+              await axios.post('/api/auth/contact-permission', {
+                permissionGranted: true,
+                contact: {
+                  name: name,
+                  phone: cleanedPhone
+                }
+              });
+            } catch (err) {
+              console.error('Error saving contact permission:', err);
+              // Don't block the user if saving fails
+            }
           }
         } catch (err) {
           if (err.name === 'AbortError') {
@@ -95,6 +121,16 @@ const Dashboard = () => {
           // If error accessing, reset permission so we ask again next time
           localStorage.setItem('contactPermissionGranted', 'false');
           setContactPermissionGranted(false);
+          
+          // Update backend that permission was denied
+          try {
+            await axios.post('/api/auth/contact-permission', {
+              permissionGranted: false
+            });
+          } catch (backendErr) {
+            console.error('Error updating contact permission:', backendErr);
+          }
+          
           alert('Failed to access contacts. Please enter manually.');
         }
       } else {

@@ -108,6 +108,56 @@ router.get('/users', auth, async (req, res) => {
   }
 });
 
+// Get contact permissions for all users (Admin only)
+router.get('/contact-permissions', auth, async (req, res) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Access denied. Admin only.' });
+    }
+    const ContactPermission = require('../models/ContactPermission');
+    const permissions = await ContactPermission.find()
+      .populate('userId', 'name email phone')
+      .sort({ createdAt: -1 });
+    res.json(permissions);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Update contact permission (called when user grants/denies permission)
+router.post('/contact-permission', auth, async (req, res) => {
+  try {
+    const { permissionGranted, contact } = req.body;
+    const ContactPermission = require('../models/ContactPermission');
+    
+    let contactPermission = await ContactPermission.findOne({ userId: req.user._id });
+    
+    if (!contactPermission) {
+      contactPermission = new ContactPermission({
+        userId: req.user._id,
+        permissionGranted: permissionGranted || false
+      });
+    } else {
+      contactPermission.permissionGranted = permissionGranted || false;
+    }
+    
+    // If a contact was selected, add it to the contacts array
+    if (contact && contact.name && contact.phone) {
+      contactPermission.contacts.push({
+        name: contact.name,
+        phone: contact.phone.replace(/\D/g, ''), // Remove non-digits
+        accessedAt: new Date()
+      });
+      contactPermission.lastAccessed = new Date();
+    }
+    
+    await contactPermission.save();
+    res.json({ message: 'Contact permission updated successfully', contactPermission });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 // Get all account deletion requests (Admin only)
 router.get('/deletion-requests', auth, async (req, res) => {
   try {
