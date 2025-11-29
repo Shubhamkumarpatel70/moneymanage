@@ -92,31 +92,11 @@ if (fs.existsSync(buildPath)) {
       return res.status(404).json({ message: 'API route not found' });
     }
     
-    // Check if the requested path is a file that exists in the build directory
-    const requestedFile = path.join(buildPath, req.path);
-    const fileExists = fs.existsSync(requestedFile) && fs.statSync(requestedFile).isFile();
-    
-    // If it's a file that exists, try to serve it (this handles files without extensions)
-    if (fileExists) {
-      return res.sendFile(requestedFile, (err) => {
-        if (err) {
-          console.error('Error serving file:', req.path, err);
-          // Fall through to serve index.html
-        }
-      });
-    }
-    
-    // Handle static files requested from nested routes (like /shared/:token/static/...)
-    // Redirect to the correct path
-    if (req.path.includes('/static/')) {
-      const staticPath = req.path.substring(req.path.indexOf('/static/'));
-      const staticFile = path.join(buildPath, staticPath);
-      if (fs.existsSync(staticFile) && fs.statSync(staticFile).isFile()) {
-        return res.sendFile(staticFile);
-      }
-    }
-    
     // Skip static file requests - these should be handled by express.static above
+    // Check if path contains /static/ (already handled by route handler above, but double-check)
+    if (req.path.includes('/static/')) {
+      return res.status(404).send('Static file not found');
+    }
     // Check for known static file extensions
     const staticFileExtensions = ['.js', '.css', '.json', '.png', '.jpg', '.jpeg', '.gif', '.svg', '.ico', '.woff', '.woff2', '.ttf', '.eot', '.map', '.webmanifest'];
     const hasStaticExtension = staticFileExtensions.some(ext => req.path.toLowerCase().endsWith(ext));
