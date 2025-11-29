@@ -114,6 +114,15 @@ const Home = () => {
             >
               Login
             </button>
+            {deferredPrompt && (
+              <button
+                onClick={handleInstallClick}
+                className="px-8 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
+              >
+                <FiSmartphone />
+                Download App
+              </button>
+            )}
           </div>
         </div>
 

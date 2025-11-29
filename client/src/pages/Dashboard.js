@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
-import { FiPlus, FiLogOut, FiUser, FiSettings, FiHome, FiCreditCard, FiUser as FiUserIcon, FiUsers, FiTrash2, FiEdit2, FiX, FiImage, FiDollarSign, FiGlobe, FiEye, FiCheck, FiXCircle, FiSearch, FiPhone } from 'react-icons/fi';
+import { FiPlus, FiLogOut, FiUser, FiSettings, FiHome, FiCreditCard, FiUser as FiUserIcon, FiUsers, FiTrash2, FiEdit2, FiX, FiImage, FiDollarSign, FiGlobe, FiEye, FiCheck, FiXCircle, FiSearch, FiPhone, FiSmartphone } from 'react-icons/fi';
 
 const Dashboard = () => {
   const { t } = useLanguage();
@@ -22,12 +22,37 @@ const Dashboard = () => {
     // Check if permission was previously granted
     return localStorage.getItem('contactPermissionGranted') === 'true';
   });
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+  const [isInstalled, setIsInstalled] = useState(false);
   const { user, logout } = useContext(AuthContext);
   const navigate = useNavigate();
 
   useEffect(() => {
     fetchCustomers();
     fetchSummary();
+    
+    // Check if app is already installed
+    if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone) {
+      setIsInstalled(true);
+    }
+    
+    // Listen for the beforeinstallprompt event
+    const handler = (e) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+
+    window.addEventListener('beforeinstallprompt', handler);
+    
+    // Listen for app installed event
+    window.addEventListener('appinstalled', () => {
+      setIsInstalled(true);
+      setDeferredPrompt(null);
+    });
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handler);
+    };
   }, []);
 
   const fetchCustomers = async () => {
@@ -172,6 +197,33 @@ const Dashboard = () => {
     navigate('/login');
   };
 
+  const handleInstallClick = async () => {
+    if (!deferredPrompt) {
+      // For iOS Safari, show instructions
+      if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
+        alert('To install this app on your iOS device:\n1. Tap the Share button\n2. Tap "Add to Home Screen"');
+        return;
+      }
+      return;
+    }
+
+    // Show the install prompt
+    deferredPrompt.prompt();
+
+    // Wait for the user to respond
+    const { outcome } = await deferredPrompt.userChoice;
+
+    if (outcome === 'accepted') {
+      console.log('User accepted the install prompt');
+      setIsInstalled(true);
+    } else {
+      console.log('User dismissed the install prompt');
+    }
+
+    // Clear the deferredPrompt
+    setDeferredPrompt(null);
+  };
+
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-IN', {
       style: 'currency',
@@ -195,6 +247,16 @@ const Dashboard = () => {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            {!isInstalled && deferredPrompt && (
+              <button
+                onClick={handleInstallClick}
+                className="flex items-center gap-2 px-3 md:px-4 py-2 bg-green-600 text-white hover:bg-green-700 rounded-lg transition"
+                title="Download App"
+              >
+                <FiSmartphone />
+                <span className="hidden sm:inline">Download App</span>
+              </button>
+            )}
             {user?.role === 'admin' && (
               <button
                 onClick={() => navigate('/admin')}
