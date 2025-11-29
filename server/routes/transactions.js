@@ -284,9 +284,12 @@ router.post('/share/history', auth, async (req, res) => {
 // Get shared link data (public route, no auth required)
 router.get('/shared/:token', async (req, res) => {
   try {
+    // Decode the token to handle URL encoding (e.g., %20 for spaces)
+    const token = decodeURIComponent(req.params.token);
+    
     const SharedLink = require('../models/SharedLink');
     const sharedLink = await SharedLink.findOne({ 
-      token: req.params.token,
+      token: token,
       expiresAt: { $gt: new Date() }
     });
 
@@ -371,9 +374,12 @@ router.post('/shared/:token/verify', async (req, res) => {
 // Get payment methods for shared link (public route)
 router.get('/shared/:token/payment-methods', async (req, res) => {
   try {
+    // Decode the token to handle URL encoding
+    const token = decodeURIComponent(req.params.token);
+    
     const SharedLink = require('../models/SharedLink');
     const sharedLink = await SharedLink.findOne({ 
-      token: req.params.token,
+      token: token,
       expiresAt: { $gt: new Date() }
     });
 
@@ -394,11 +400,14 @@ router.get('/shared/:token/payment-methods', async (req, res) => {
 // Process payment (public route)
 router.post('/shared/:token/payment', async (req, res) => {
   try {
+    // Decode the token to handle URL encoding
+    const token = decodeURIComponent(req.params.token);
+    
     const { paymentMethodId, phoneNumber, amount, notes, paymentProof } = req.body;
 
     const SharedLink = require('../models/SharedLink');
     const sharedLink = await SharedLink.findOne({ 
-      token: req.params.token,
+      token: token,
       expiresAt: { $gt: new Date() }
     });
 
