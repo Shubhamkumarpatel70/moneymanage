@@ -30,14 +30,34 @@ app.use('/api/payments', require('./routes/payments'));
 // This must be after API routes but before catch-all
 if (process.env.NODE_ENV === 'production') {
   const path = require('path');
+  const fs = require('fs');
   const buildPath = path.join(__dirname, '../client/build');
   
-  // Serve static files (JS, CSS, images, manifest.json, etc.)
-  // This middleware will serve files from the build directory
+  // Log build path for debugging
+  console.log('Build path:', buildPath);
+  console.log('Build directory exists:', fs.existsSync(buildPath));
+  
+  // Serve static files from /static directory (JS, CSS, etc.)
+  app.use('/static', express.static(path.join(buildPath, 'static'), {
+    maxAge: '1y',
+    etag: false
+  }));
+  
+  // Serve manifest.json and other root files
+  app.get('/manifest.json', (req, res) => {
+    res.sendFile(path.join(buildPath, 'manifest.json'), (err) => {
+      if (err) {
+        console.error('Error serving manifest.json:', err);
+        res.status(404).send('Manifest not found');
+      }
+    });
+  });
+  
+  // Serve favicon and other public assets
   app.use(express.static(buildPath, {
-    maxAge: '1y', // Cache static assets
+    maxAge: '1y',
     etag: false,
-    index: false // Don't serve index.html for directory requests
+    index: false
   }));
   
   // Serve React app for all non-API routes (catch-all handler)
@@ -49,13 +69,11 @@ if (process.env.NODE_ENV === 'production') {
     }
     
     // Skip static file requests - these should be handled by express.static above
-    // If express.static didn't find the file, it will call next() and we'll serve index.html
-    // But we want to explicitly skip known static file extensions to avoid serving HTML for missing files
     const staticFileExtensions = ['.js', '.css', '.json', '.png', '.jpg', '.jpeg', '.gif', '.svg', '.ico', '.woff', '.woff2', '.ttf', '.eot', '.map'];
     const hasStaticExtension = staticFileExtensions.some(ext => req.path.toLowerCase().endsWith(ext));
     
     if (hasStaticExtension) {
-      // If it's a static file extension but wasn't found by express.static, return 404
+      // If it's a static file extension but wasn't found, return 404
       return res.status(404).send('File not found');
     }
     
