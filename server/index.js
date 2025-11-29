@@ -39,16 +39,30 @@ if (fs.existsSync(buildPath)) {
   console.log('Serving React app from build directory');
   
   // Serve static files from /static directory (JS, CSS, etc.)
+  // This must handle requests from any route (including /shared/:token)
   app.use('/static', express.static(path.join(buildPath, 'static'), {
     maxAge: process.env.NODE_ENV === 'production' ? '1y' : '0',
     etag: false
   }));
   
-  // Serve manifest.json and other root files
+  // Serve manifest.json from root and from any nested route
   app.get('/manifest.json', (req, res) => {
     res.sendFile(path.join(buildPath, 'manifest.json'), (err) => {
       if (err) {
         console.error('Error serving manifest.json:', err);
+        res.status(404).send('Manifest not found');
+      }
+    });
+  });
+  
+  // Also serve manifest.json from nested routes (like /shared/:token/manifest.json)
+  // This handles cases where the browser requests it with a relative path
+  app.get('*/manifest.json', (req, res) => {
+    // Extract the actual path and serve from root
+    const manifestPath = path.join(buildPath, 'manifest.json');
+    res.sendFile(manifestPath, (err) => {
+      if (err) {
+        console.error('Error serving manifest.json from nested route:', err);
         res.status(404).send('Manifest not found');
       }
     });
@@ -81,6 +95,16 @@ if (fs.existsSync(buildPath)) {
           // Fall through to serve index.html
         }
       });
+    }
+    
+    // Handle static files requested from nested routes (like /shared/:token/static/...)
+    // Redirect to the correct path
+    if (req.path.includes('/static/')) {
+      const staticPath = req.path.substring(req.path.indexOf('/static/'));
+      const staticFile = path.join(buildPath, staticPath);
+      if (fs.existsSync(staticFile) && fs.statSync(staticFile).isFile()) {
+        return res.sendFile(staticFile);
+      }
     }
     
     // Skip static file requests - these should be handled by express.static above
