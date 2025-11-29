@@ -31,7 +31,6 @@ app.use('/api/customers', require('./routes/customers'));
 app.use('/api/transactions', require('./routes/transactions'));
 app.use('/api/payment-methods', require('./routes/paymentMethods'));
 app.use('/api/payments', require('./routes/payments'));
-app.use('/api/auth/deletion-requests', require('./routes/accountDeletionRequests'));
 
 // Serve React app in production (catch-all handler)
 if (process.env.NODE_ENV === 'production') {
