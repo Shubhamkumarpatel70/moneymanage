@@ -10,12 +10,6 @@ app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
-// Serve static files from React app in production
-if (process.env.NODE_ENV === 'production') {
-  const path = require('path');
-  app.use(express.static(path.join(__dirname, '../client/build')));
-}
-
 // MongoDB connection
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/money-management';
 mongoose.connect(MONGODB_URI, {
@@ -25,18 +19,28 @@ mongoose.connect(MONGODB_URI, {
 .then(() => console.log('MongoDB connected'))
 .catch(err => console.error('MongoDB connection error:', err));
 
-// Routes
+// API Routes (must be before static file serving)
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/customers', require('./routes/customers'));
 app.use('/api/transactions', require('./routes/transactions'));
 app.use('/api/payment-methods', require('./routes/paymentMethods'));
 app.use('/api/payments', require('./routes/payments'));
 
-// Serve React app in production (catch-all handler)
+// Serve static files from React app in production
+// This must be after API routes but before catch-all
 if (process.env.NODE_ENV === 'production') {
   const path = require('path');
+  const buildPath = path.join(__dirname, '../client/build');
+  
+  // Serve static files (JS, CSS, images, etc.)
+  app.use(express.static(buildPath, {
+    maxAge: '1y', // Cache static assets
+    etag: false
+  }));
+  
+  // Serve React app for all non-API routes (catch-all handler)
   app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, '../client/build', 'index.html'));
+    res.sendFile(path.join(buildPath, 'index.html'));
   });
 }
 
