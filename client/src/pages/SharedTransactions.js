@@ -305,7 +305,8 @@ const SharedTransactions = () => {
                     <div className="px-4 py-4 grid grid-cols-3 gap-4">
                       <div>
                         <p className="text-sm text-gray-600">{formatDate(transaction.createdAt)}</p>
-                        <p className="text-xs text-gray-500 mt-1">Bal. {formatCurrency(transaction.balance)}</p>
+                        {/* Reverse balance for recipient's perspective */}
+                        <p className="text-xs text-gray-500 mt-1">Bal. {formatCurrency(-transaction.balance)}</p>
                         {transaction.customerId && (
                           <p className="text-xs text-gray-600 mt-1">
                             Customer: {transaction.customerId.name}
