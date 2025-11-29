@@ -18,6 +18,10 @@ const Dashboard = () => {
   const [newCustomer, setNewCustomer] = useState({ name: '', mobile: '' });
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [contactPermissionGranted, setContactPermissionGranted] = useState(() => {
+    // Check if permission was previously granted
+    return localStorage.getItem('contactPermissionGranted') === 'true';
+  });
   const { user, logout } = useContext(AuthContext);
   const navigate = useNavigate();
 
@@ -48,14 +52,24 @@ const Dashboard = () => {
 
   const handlePickContact = async () => {
     try {
-      // First, always ask for permission to use contacts
-      const permissionGranted = window.confirm(
-        'This app would like to access your contacts to help you add customers quickly. Do you want to continue?'
-      );
+      // Check if permission was previously granted
+      if (!contactPermissionGranted) {
+        // Ask for permission only if not previously granted
+        const permissionGranted = window.confirm(
+          'This app would like to access your contacts to help you add customers quickly. Do you want to continue?'
+        );
 
-      if (!permissionGranted) {
-        alert('Okay. You can still enter customer details manually.');
-        return;
+        if (!permissionGranted) {
+          // User denied permission - store this so we ask again next time
+          localStorage.setItem('contactPermissionGranted', 'false');
+          setContactPermissionGranted(false);
+          alert('Okay. You can still enter customer details manually.');
+          return;
+        } else {
+          // User granted permission - store this so we don't ask again
+          localStorage.setItem('contactPermissionGranted', 'true');
+          setContactPermissionGranted(true);
+        }
       }
 
       // Check if Contact Picker API is available (Chrome/Edge on Android)
@@ -78,6 +92,9 @@ const Dashboard = () => {
             return;
           }
           console.error('Error accessing contacts:', err);
+          // If error accessing, reset permission so we ask again next time
+          localStorage.setItem('contactPermissionGranted', 'false');
+          setContactPermissionGranted(false);
           alert('Failed to access contacts. Please enter manually.');
         }
       } else {
@@ -86,6 +103,9 @@ const Dashboard = () => {
       }
     } catch (error) {
       console.error('Error picking contact:', error);
+      // Reset permission on error so we ask again next time
+      localStorage.setItem('contactPermissionGranted', 'false');
+      setContactPermissionGranted(false);
       alert('Failed to access contacts. Please enter manually.');
     }
   };
