@@ -85,20 +85,26 @@ const SharedTransactions = () => {
   };
 
   const calculateSummary = () => {
-    let totalReceived = 0;
-    let totalGiven = 0;
+    // Reverse perspective: From the recipient's point of view
+    // If owner received, recipient gave (shows in "You Gave")
+    // If owner gave, recipient received (shows in "You Took")
+    let totalReceived = 0; // What recipient received (owner gave)
+    let totalGiven = 0; // What recipient gave (owner received)
     let currentBalance = 0;
 
     transactions.forEach(transaction => {
-      if (transaction.type === 'received') {
+      if (transaction.type === 'given') {
+        // Owner gave = Recipient received
         totalReceived += transaction.amount;
-      } else {
+      } else if (transaction.type === 'received') {
+        // Owner received = Recipient gave
         totalGiven += transaction.amount;
       }
     });
 
     if (transactions.length > 0) {
-      currentBalance = transactions[0].balance;
+      // Reverse the balance: if owner balance is -300, recipient balance is +300
+      currentBalance = -transactions[0].balance;
     }
 
     return { totalReceived, totalGiven, currentBalance };
@@ -274,8 +280,8 @@ const SharedTransactions = () => {
           {/* Table Header */}
           <div className="px-4 py-3 bg-gray-100 border-b grid grid-cols-3 gap-4 text-sm font-semibold text-gray-700">
             <div>ENTRIES</div>
-            <div className="text-red-600">AAPNE DIYE</div>
-            <div className="text-green-600">AAPKO MILE</div>
+            <div className="text-red-600">You Gave</div>
+            <div className="text-green-600">You Took</div>
           </div>
 
           {transactions.length === 0 ? (
@@ -309,11 +315,13 @@ const SharedTransactions = () => {
                           <p className="text-xs text-gray-600 mt-1">{transaction.description}</p>
                         )}
                       </div>
+                      {/* Reverse perspective: If owner gave, recipient received (shows in green "You Took") */}
+                      {/* If owner received, recipient gave (shows in red "You Gave") */}
                       <div className="text-red-600 font-medium">
-                        {transaction.type === 'given' ? formatCurrency(transaction.amount) : ''}
+                        {transaction.type === 'received' ? formatCurrency(transaction.amount) : ''}
                       </div>
                       <div className="text-green-600 font-medium">
-                        {transaction.type === 'received' ? formatCurrency(transaction.amount) : ''}
+                        {transaction.type === 'given' ? formatCurrency(transaction.amount) : ''}
                       </div>
                     </div>
                   </React.Fragment>

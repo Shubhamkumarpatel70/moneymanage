@@ -41,8 +41,8 @@ const translations = {
     
     // Customer Transactions
     currentBalance: 'Current Balance',
-    youGave: 'AAPNE DIYE ₹',
-    youReceived: 'AAPKO MILE ₹',
+    youGave: 'You Gave ₹',
+    youReceived: 'You Took ₹',
     entries: 'ENTRIES',
     balance: 'Bal.',
     addTransaction: 'Add Transaction',
