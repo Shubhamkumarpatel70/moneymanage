@@ -128,13 +128,14 @@ const CustomerTransactions = () => {
       const shareUrl = res.data.shareUrl;
       
       // Prepare share text with customer details
-      const customerInfo = customer ? `Customer: ${customer.name}\nPhone: ${customer.mobile}\n\n` : '';
-      const shareText = `${customerInfo}Transaction History Link:\n${shareUrl}\n\nPlease enter your phone number: ${shareMobile} to view the transactions.`;
+      const customerInfo = customer ? `Customer: ${customer.name}\n\nPhone: ${customer.mobile}\n\n` : '';
+      const shareText = `${customerInfo}Transaction History Link:\n\n${shareUrl}\n\n\nPlease enter your phone number: ${shareMobile} to view the transactions.`;
       
       // Copy to clipboard with customer details
       if (navigator.clipboard) {
         await navigator.clipboard.writeText(shareText);
-        alert(`Shareable link with customer details copied to clipboard!\n\n${shareText}`);
+        // Show formatted message with customer details
+        alert(`Shareable link generated!\n\n${shareText}`);
       } else {
         // Fallback for older browsers
         const textArea = document.createElement('textarea');
@@ -143,7 +144,8 @@ const CustomerTransactions = () => {
         textArea.select();
         document.execCommand('copy');
         document.body.removeChild(textArea);
-        alert(`Shareable link with customer details copied!\n\n${shareText}`);
+        // Show formatted message with customer details
+        alert(`Shareable link generated!\n\n${shareText}`);
       }
       
       // Try native share if available
