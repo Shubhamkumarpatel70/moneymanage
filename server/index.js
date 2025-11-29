@@ -103,8 +103,10 @@ if (fs.existsSync(buildPath)) {
     
     // Also check if it looks like a hash-based filename (service worker, chunk, etc.)
     // Hash filenames are typically 40-64 character hex strings
-    const pathParts = req.path.split('/').pop();
-    const isHashFile = /^[a-f0-9]{32,64}$/i.test(pathParts);
+    // BUT: Don't treat SPA routes like /shared/:token as hash files
+    const pathParts = req.path.split('/');
+    const lastPart = pathParts[pathParts.length - 1];
+    const isHashFile = /^[a-f0-9]{32,64}$/i.test(lastPart) && !req.path.startsWith('/shared/');
     
     if (hasStaticExtension || isHashFile) {
       // If it's a static file but wasn't found, return 404
