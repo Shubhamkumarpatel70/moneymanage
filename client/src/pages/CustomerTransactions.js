@@ -45,8 +45,14 @@ const CustomerTransactions = () => {
     try {
       const res = await axios.get(`/api/transactions/customer/${customerId}`);
       setTransactions(res.data);
+      // Calculate current balance from the most recent transaction
+      // The balance field in the last transaction (first in array) is the current balance for this customer
       if (res.data.length > 0) {
+        // Get the most recent transaction's balance (first item in sorted array)
         setBalance(res.data[0].balance);
+      } else {
+        // If no transactions, balance is 0
+        setBalance(0);
       }
     } catch (error) {
       console.error('Error fetching transactions:', error);
@@ -296,7 +302,7 @@ const CustomerTransactions = () => {
             className="bg-red-600 text-white py-3 md:py-4 rounded-lg font-semibold hover:bg-red-700 transition flex items-center justify-center gap-2 shadow-lg text-sm md:text-base"
           >
             <FiPlus className="text-base md:text-lg" />
-            <span className="truncate">AAPNE DIYE ₹</span>
+            <span className="truncate">You Gave</span>
           </button>
           <button
             onClick={() => {
@@ -306,7 +312,7 @@ const CustomerTransactions = () => {
             className="bg-green-600 text-white py-3 md:py-4 rounded-lg font-semibold hover:bg-green-700 transition flex items-center justify-center gap-2 shadow-lg text-sm md:text-base"
           >
             <FiPlus className="text-base md:text-lg" />
-            <span className="truncate">AAPKO MILE ₹</span>
+            <span className="truncate">You Took</span>
           </button>
         </div>
 
@@ -372,8 +378,8 @@ const CustomerTransactions = () => {
           {/* Table Header */}
           <div className="px-3 md:px-4 py-2 md:py-3 bg-gray-100 border-b grid grid-cols-3 gap-2 md:gap-4 text-xs md:text-sm font-semibold text-gray-700">
             <div>ENTRIES</div>
-            <div className="text-red-600">AAPNE DIYE</div>
-            <div className="text-green-600">AAPKO MILE</div>
+            <div className="text-red-600">You Gave</div>
+            <div className="text-green-600">You Took</div>
           </div>
 
           {loading ? (
